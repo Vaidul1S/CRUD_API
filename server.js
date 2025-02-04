@@ -1,28 +1,11 @@
 const express = require('express');
 const app = express();
-
-require('dotenv').config();
+const pool = require('./database');
 
 const port = 5555;
 
 app.use(express.json());
 
-const { Pool } = require('pg');
-
-const pool = new Pool({
-    host: process.env.PG_HOST,
-    port: process.env.PG_PORT,
-    user: process.env.PG_USER,
-    password: process.env.PG_PASSWORD,
-    database: process.env.PG_DATABASE,
-});
-
-pool.on('error', (err, client) => {
-    console.log('Something is wrong', err);
-    process.exit(-1);    
-});
-
-module.exports = pool;  // konstanta priskiriam moduli, galime naudoti kituose scripuose ar panasiai
 
 
 //-----------------------------Routes-----------------------------
@@ -37,20 +20,16 @@ app.get('/products', async (req, res) => {
 
 });
 
-app.get('/users', (req, res) => {
+app.get('/users', async (req, res) => {
 
-    const usersDB = `
-    SELECT * FROM users
-    `;
-    con.query(sql, (err, result) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-
-        res.json({ result });
-    });
-
+    try {
+        const results = await pool.query('select * from users');
+        res.status(200).json(results.rows);
+        res.status(200).json({ message: 'Sėkmingai prisijungta prie users' });
+    } catch (error) {
+        res.status(400).json({ error: 'error' });
+    }
+    
 });
 
 app.listen(port, () => {
